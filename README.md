@@ -23,7 +23,7 @@ flowchart LR
   P[ParticipantRegistry: roles + bonds] --- A
   P --- F
   N -->|swap| S[MockSwap] -->|lock / mint| B[BridgeGateway] -->|settlement| O[FiatOffRampAttestor] --> VEN[Fiat vendor]
-  UI[Dashboard] -.reads.-> API[(API — Phase 3, pending)]
+  UI[Dashboard] -->|HTTP| API[Ledger API services/api] -->|reads events, sends txs| E
 ```
 
 ## Contract responsibilities
@@ -125,28 +125,56 @@ npx hardhat node
 
 This starts a local Ethereum node at `http://127.0.0.1:8545` (chain ID 31337) with 20 funded test accounts. If it fails with `EADDRINUSE`, another node is already listening on port 8545; skip this step and use that one.
 
-**3. Deploy and run the full scenario on that chain** (second terminal)
+**3. Deploy and seed the contracts** (second terminal)
+
+```bash
+npm run deploy:local
+```
+
+This deploys and wires every contract on the local node. It then seeds three campaigns entirely through real transactions:
+
+- **Campaign 1:** donations, quorum-verified receipts, a released tranche, the swap → bridge → off-ramp trail, and one receipt still awaiting verifiers.
+- **Campaign 2:** a forged receipt that was rejected, and the campaign frozen by two verifier votes.
+- **Campaign 3:** a first tranche still waiting on evidence.
+
+The contract addresses are written to `deployments/localhost.json`. Run this again whenever you restart the node.
+
+**4. Start the ledger API** (same terminal, leave it open)
+
+```bash
+npm run api
+```
+
+The API serves the dashboard at http://localhost:4000. It reads campaigns, receipts, freezes and events straight from the chain. When you act in the dashboard (donate, file a receipt, attest, challenge, vote to unfreeze, release a tranche), the API sends the real transaction from the matching local test account. If a transaction fails, the dashboard shows the contract's revert reason, for example `InsufficientVerifiedEvidence`.
+
+**5. Start the dashboard** (third terminal)
+
+```bash
+npm run dev
+```
+
+Open http://localhost:5173. In dev mode the dashboard reads from the API (`dashboard/.env.development` sets `VITE_API_URL=http://localhost:4000`) and refreshes every 5 seconds. If the API isn't running, it falls back to clearly labelled demo data.
+
+**Try it.** Switch roles in the sidebar:
+
+1. As **Verifier**, attest the pending School Meals receipt.
+2. As **NGO admin**, release that campaign's first tranche, which the new evidence now covers.
+3. As **Verifier**, cast the second unfreeze vote on the Flood Relief campaign.
+
+**Red-team scenario on the same chain** (optional)
 
 ```bash
 npm run demo:redteam:localhost
 ```
 
-This deploys and wires every contract, then runs the full scenario:
+This deploys its own separate copy of the contracts, then runs the adversarial scenario:
 
 - a donation;
 - the honest tranche through swap → bridge → off-ramp;
 - the reused-receipt and forged-receipt attacks;
 - the freezes, the slashing and the refund.
 
-It prints the results and writes [reports/redteam-report.md](reports/redteam-report.md). It is currently the only script that deploys the contracts.
-
-**4. Start the dashboard** (third terminal)
-
-```bash
-npm run dev
-```
-
-Open http://localhost:5173. The dashboard is not connected to the chain yet: the Phase 3 API that would link them does not exist, so it shows clearly labelled demo data.
+It writes [reports/redteam-report.md](reports/redteam-report.md). The dashboard keeps showing the `deploy:local` deployment.
 
 **Without starting a blockchain**
 
@@ -177,17 +205,21 @@ npm run coverage
 | `npm test` | 96 tests: 47 unit, 15 integration, 33 security probes, 1 smoke test (see [reports/test-report.md](reports/test-report.md)) | works, all passing; 97.5% line coverage |
 | `npm run demo:redteam` | Adversarial scenario on an in-process Hardhat network; writes [reports/redteam-report.md](reports/redteam-report.md) | works |
 | `npm run demo:redteam:localhost` | Same scenario against `npx hardhat node` | works with a running node |
-| `npm run dev` | Dashboard (Vite) on http://localhost:5173 | works — runs on labelled demo data until an API is connected via `VITE_API_URL` |
+| `npm run deploy:local` | Deploy, wire and seed the contracts on the local node; writes `deployments/localhost.json` | works with a running node |
+| `npm run api` / `npm run services:up` | Ledger API on http://localhost:4000: on-chain reads, and transactions for dashboard actions | works after `deploy:local` |
+| `npm run dev` | Dashboard (Vite) on http://localhost:5173, live from the API (demo data only if the API is down) | works |
 | `npm run coverage` | Solidity coverage | works — 97.5% lines, 86.4% branches |
 | `npm run lint` | ESLint + Solhint | **broken** — ESLint is not installed/configured and there is no `.solhint.json`; Solhint with recommended rules reports 0 errors, 89 style warnings |
-| `npm run chain:up`, `deploy:local`, `services:up` | Two-node chain, deploy+seed, off-chain services | **not implemented** — `scripts/deploy-local.ts`, `seed.ts`, `relayer.ts` and `services/*` were not produced in Phases 2–3 |
+| `npm run chain:up` | Prints how to start the nodes | use `npx hardhat node` instead |
+| Indexer, detection, scoring, verifier-node services | Separate Phase 3 services | **not implemented** — the API computes scores and alerts on demand; `scripts/relayer.ts` and a second chain are not built |
 
 ## Repository
 
 ```
 contracts/   core, interfaces, libraries, mocks
 test/        unit (47), integration (15), security probes (33)
-scripts/     redteam.ts
+scripts/     deploy-local.ts (deploy + seed), redteam.ts
+services/api ledger API for the dashboard (on-chain reads, transactions for actions)
 dashboard/   Vite + React + TypeScript UI (see dashboard/SOURCES.md)
 reports/     redteam-report.md
 docs/        Phase 0 design documents

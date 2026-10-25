@@ -41,7 +41,11 @@ async function loadLive(): Promise<LedgerData> {
 
 async function post(path: string, body: unknown) {
   const r = await fetch(`${API}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(`${path} failed (${r.status})`);
+  if (!r.ok) {
+    // The API returns {error} with the contract's revert reason, e.g. "InsufficientVerifiedEvidence".
+    const detail = await r.json().then((j) => j?.error, () => undefined);
+    throw new Error(detail ? `the ledger rejected it (${detail})` : `${path} failed (${r.status})`);
+  }
 }
 
 const EMPTY: LedgerData = { campaigns: [], traces: [], evidence: [], alerts: [], transactions: [] };
@@ -116,6 +120,10 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refresh();
+    if (!API) return;
+    // Pick up on-chain changes made elsewhere (other tabs, scripts, verifiers).
+    const timer = setInterval(refresh, 5000);
+    return () => clearInterval(timer);
   }, [refresh]);
 
   const live = source === "live" || source === "stale";

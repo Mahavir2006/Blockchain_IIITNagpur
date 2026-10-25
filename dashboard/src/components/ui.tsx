@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { fmt } from "../lib/store";
 
 export function Card({ children, className = "", ...rest }: { children: ReactNode; className?: string } & React.HTMLAttributes<HTMLDivElement>) {
   return (
@@ -41,7 +42,7 @@ export function Button({ variant = "primary", className = "", ...rest }: ButtonH
   }[variant];
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${v} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${v} ${className}`}
       {...rest}
     />
   );
@@ -68,7 +69,7 @@ export function Meter({ value, max = 1, label, invert = false }: { value: number
       {label && (
         <div className="mb-1 flex justify-between text-xs text-ink-70">
           <span>{label}</span>
-          <span className="tabular">{Math.round(pct)}%</span>
+          <span className="tabular">{fmt(Math.round(pct))}%</span>
         </div>
       )}
       <div className="h-2 overflow-hidden rounded-full bg-cloud-200" role="meter" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
@@ -82,8 +83,9 @@ export function riskTone(score: number): Tone {
   return score >= 70 ? "danger" : score >= 40 ? "warn" : "ok";
 }
 
+/** Translation key for a risk score's label. */
 export function riskLabel(score: number) {
-  return score >= 70 ? "High risk" : score >= 40 ? "Watch" : "Low risk";
+  return score >= 70 ? "common.riskHigh" : score >= 40 ? "common.riskWatch" : "common.riskLow";
 }
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { demoData } from "./demo";
+import i18n, { currentLanguage, speechLang } from "../i18n";
 import type { Evidence, LedgerData, Role } from "./types";
 
 export const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") || "";
@@ -44,7 +45,7 @@ async function post(path: string, body: unknown) {
   if (!r.ok) {
     // The API returns {error} with the contract's revert reason, e.g. "InsufficientVerifiedEvidence".
     const detail = await r.json().then((j) => j?.error, () => undefined);
-    throw new Error(detail ? `the ledger rejected it (${detail})` : `${path} failed (${r.status})`);
+    throw new Error(detail ? i18n.t("errors.rejected", { detail }) : i18n.t("errors.requestFailed", { path, status: r.status }));
   }
 }
 
@@ -72,7 +73,7 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   const [votes, setVotes] = useState<Set<string>>(new Set());
   /** Rejects a repeat vote up front; the vote is only recorded once the action succeeds. */
   const castOnce = async (key: string, act: () => Promise<void> | void) => {
-    if (votes.has(key)) throw new Error("you have already voted on this");
+    if (votes.has(key)) throw new Error(i18n.t("errors.alreadyVoted"));
     await act();
     setVotes((v) => new Set(v).add(key));
   };
@@ -110,7 +111,7 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (e) {
       const offline = e instanceof TypeError; // fetch() rejects with TypeError when the server is unreachable
-      setError(`That action did not go through: ${offline ? "the ledger service could not be reached" : (e as Error).message}. Nothing was changed.`);
+      setError(i18n.t("errors.actionFailed", { reason: offline ? i18n.t("errors.offline") : (e as Error).message }));
       if (offline) refresh();
       return false;
     } finally {
@@ -181,13 +182,13 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   const requestTranche: Ctx["requestTranche"] = async (campaignId, index) => {
     const c = data.campaigns.find((x) => x.id === campaignId);
     const t = c?.tranches.find((x) => x.index === index);
-    if (!c || !t) return "Tranche not found.";
-    if (c.frozen) return "Release refused: this campaign is frozen.";
-    if (t.impactScore < t.requiredScore) return `Release refused: impact score ${t.impactScore.toFixed(2)} is below the required ${t.requiredScore.toFixed(2)}.`;
+    if (!c || !t) return i18n.t("release.notFound");
+    if (c.frozen) return i18n.t("release.frozen");
+    if (t.impactScore < t.requiredScore) return i18n.t("release.lowScore", { score: dec(t.impactScore), required: dec(t.requiredScore) });
     if (live) {
       await post(`/campaigns/${campaignId}/tranches/${index}/release`, {});
       await refresh();
-      return "Release submitted.";
+      return i18n.t("release.submitted");
     }
     setData((d) => ({
       ...d,
@@ -200,7 +201,7 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
         },
       ),
     }));
-    return "Tranche released (demo).";
+    return i18n.t("release.demo");
   };
 
   return (
@@ -229,6 +230,9 @@ export function useLedger() {
   return c;
 }
 
-export const fmt = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 1 });
+// Formatting follows the UI language (Indian digit grouping in every supported language).
+export const fmt = (n: number) => n.toLocaleString(speechLang(currentLanguage()), { maximumFractionDigits: 1 });
+/** Fixed two decimals (scores) in the UI language's digits. */
+export const dec = (n: number) => n.toLocaleString(speechLang(currentLanguage()), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const short = (h: string) => (h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : h);
-export const date = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+export const date = (iso: string) => new Date(iso).toLocaleString(speechLang(currentLanguage()), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });

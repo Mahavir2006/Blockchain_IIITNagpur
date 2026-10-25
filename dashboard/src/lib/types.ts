@@ -1,14 +1,5 @@
 export type Role = "donor" | "ngo" | "vendor" | "verifier";
 
-/** Mirrors FreezeController reason codes (contracts/core/FreezeController.sol). */
-export const FREEZE_REASONS: Record<number, string> = {
-  0: "Not frozen",
-  1: "Duplicate receipt detected — the same evidence nullifier was used twice",
-  2: "Too many forged receipts — rejected evidence exceeded the allowed ratio",
-  3: "Spending tried to exceed a declared category budget",
-  4: "Verifier quorum upheld a challenge against this campaign",
-};
-
 export interface CategoryBudget {
   name: string;
   cap: number;

@@ -11,8 +11,8 @@ export default {
         ok: { DEFAULT: "#2F6B4F", 100: "#E2EFE7" },
       },
       fontFamily: {
-        sans: ['"Instrument Sans"', "system-ui", "sans-serif"],
-        serif: ['"Fraunces"', "Georgia", "serif"],
+        sans: ['"Instrument Sans"', '"Noto Sans Devanagari"', "system-ui", "sans-serif"],
+        serif: ['"Fraunces"', '"Noto Serif Devanagari"', "Georgia", "serif"],
         mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
       },
     },

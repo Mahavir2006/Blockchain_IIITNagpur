@@ -16,3 +16,9 @@ dashboard/*.tsbuildinfo
 .env
 .env.local
 .claude/
+
+# Local deployment addresses (written by scripts/deploy-local.ts; differ per node)
+deployments/
+
+# Vite temp config bundles
+*.timestamp-*.mjs

@@ -7,14 +7,15 @@
     "setup": "npm install",
     "chain:up": "echo 'Start two local Hardhat nodes: npx hardhat node (chain 31337) and npx hardhat node --port 8546 --hostname 127.0.0.1 (chain 31338)'",
     "deploy:local": "npx hardhat run scripts/deploy-local.ts --network localhost",
-    "services:up": "echo 'Start indexer, API, and verifier nodes'",
+    "services:up": "npm run api",
     "dev": "npm --prefix dashboard run dev",
     "demo:redteam": "npx hardhat run scripts/redteam.ts",
     "demo:redteam:localhost": "npx hardhat run scripts/redteam.ts --network localhost",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
     "lint": "npx eslint . --ext .ts,.sol && npx solhint 'contracts/**/*.sol'",
-    "format": "npx prettier --write ."
+    "format": "npx prettier --write .",
+    "api": "npx hardhat run services/api/server.ts --network localhost"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.2",

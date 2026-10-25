@@ -103,27 +103,77 @@ Beneficiary privacy is **commitment-based selective disclosure with Merkle proof
 
 `scripts/redteam.ts` and `test/integration/fixture.ts` do exactly this.
 
-Requires Node 18+ (tested on Node 24).
+### Running the project
+
+Requires Node 18+ (tested on Node 24). Run every command from the project root.
+
+**1. Install dependencies (once)**
 
 ```bash
-npm run setup
+npm install
 ```
 
 ```bash
-npm test
+npm --prefix dashboard install
 ```
 
+**2. Start the local blockchain** (leave this terminal open)
+
 ```bash
-npm run demo:redteam
+npx hardhat node
 ```
+
+This starts a local Ethereum node at `http://127.0.0.1:8545` (chain ID 31337) with 20 funded test accounts. If it fails with `EADDRINUSE`, another node is already listening on port 8545; skip this step and use that one.
+
+**3. Deploy and run the full scenario on that chain** (second terminal)
+
+```bash
+npm run demo:redteam:localhost
+```
+
+This deploys and wires every contract, then runs the full scenario:
+
+- a donation;
+- the honest tranche through swap → bridge → off-ramp;
+- the reused-receipt and forged-receipt attacks;
+- the freezes, the slashing and the refund.
+
+It prints the results and writes [reports/redteam-report.md](reports/redteam-report.md). It is currently the only script that deploys the contracts.
+
+**4. Start the dashboard** (third terminal)
 
 ```bash
 npm run dev
 ```
 
+Open http://localhost:5173. The dashboard is not connected to the chain yet: the Phase 3 API that would link them does not exist, so it shows clearly labelled demo data.
+
+**Without starting a blockchain**
+
+Run the same scenario on Hardhat's built-in, temporary network:
+
+```bash
+npm run demo:redteam
+```
+
+Run all tests:
+
+```bash
+npm test
+```
+
+Generate the coverage report:
+
+```bash
+npm run coverage
+```
+
+### Command reference
+
 | Command | What it does | Status |
 |---|---|---|
-| `npm run setup` | Install root dependencies (`cd dashboard && npm install` for the UI) | works |
+| `npm run setup` / `npm install` | Install root dependencies (`npm --prefix dashboard install` for the UI) | works |
+| `npx hardhat node` | Local blockchain on http://127.0.0.1:8545 (chain 31337) | works |
 | `npm test` | 96 tests: 47 unit, 15 integration, 33 security probes, 1 smoke test (see [reports/test-report.md](reports/test-report.md)) | works, all passing; 97.5% line coverage |
 | `npm run demo:redteam` | Adversarial scenario on an in-process Hardhat network; writes [reports/redteam-report.md](reports/redteam-report.md) | works |
 | `npm run demo:redteam:localhost` | Same scenario against `npx hardhat node` | works with a running node |

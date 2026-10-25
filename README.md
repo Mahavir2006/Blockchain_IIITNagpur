@@ -161,6 +161,35 @@ Open http://localhost:5173. In dev mode the dashboard reads from the API (`dashb
 2. As **NGO admin**, release that campaign's first tranche, which the new evidence now covers.
 3. As **Verifier**, cast the second unfreeze vote on the Flood Relief campaign.
 
+### Languages and voice navigation
+
+The dashboard is available in **English, Hindi (हिन्दी) and Marathi (मराठी)**.
+
+- **Picking a language:** use the picker in the sidebar (or the mobile menu). The choice is remembered, and `<html lang>` follows it.
+- **What's translated:** every interface string, plus numbers and dates, which are formatted in the chosen language (Marathi uses Devanagari digits).
+- **What isn't:** names and text recorded on the chain, such as campaign names, vendors and alert details, stay as recorded.
+- **How it's built:** `react-i18next`, with the translations in `dashboard/src/i18n/locales/{en,hi,mr}.json`.
+
+**Voice navigation.** Press the microphone button (bottom right) or `Ctrl + Space`, then speak in the current UI language. English keywords also work inside Hindi or Marathi speech. The keyboard button next to it opens the same panel for typed commands.
+
+| Say (English / हिन्दी / मराठी) | Does |
+|---|---|
+| "open alerts" / "अलर्ट खोलो" / "इशारे उघडा" | Opens a page (campaigns, follow a donation, evidence, alerts, transactions, check a delivery) |
+| "open campaign 2" / "अभियान 2 खोलो" / "मोहीम 2 उघडा" | Opens a campaign (English also matches names: "show flood relief") |
+| "switch to verifier" / "सत्यापनकर्ता बनो" / "पडताळणीकर्ता म्हणून पाहा" | Changes the role |
+| "switch to Hindi" / "मराठी में बदलो" / "इंग्रजीत बदला" | Changes the language |
+| "show critical alerts", "show pending receipts" / "गंभीर अलर्ट दिखाओ" / "प्रलंबित पावत्या दाखवा" | Applies a filter |
+| "donate 10 to campaign 1" / "अभियान 1 में 10 दान करो" / "मोहीम 1 ला 10 देणगी द्या" | Opens the donation form with the amount filled in. **You still press Donate.** Voice never sends a transaction. |
+| "read this page" / "यह पेज पढ़ो" / "हे पान वाचा" | Reads a summary of the page |
+| "help", "go back", "scroll down", "stop" | Lists commands, goes back, scrolls, stops speaking |
+
+Notes:
+
+- **Browser support:** speech recognition uses the browser's Web Speech API and needs Chrome or Edge. Other browsers get the typed command box.
+- **Privacy:** Chrome and Edge send the audio to their speech service to convert it to text. The dashboard stores nothing.
+- **Spoken replies:** these use the device's installed voices and can be turned off. If the device has no voice for the current language (common for Hindi and Marathi on Windows), the reply is shown as text instead, with a note explaining why.
+- **Code:** the command parser is a pure function, `dashboard/src/voice/commands.ts`, unit-tested with phrases in all three languages. Run `npm --prefix dashboard test`.
+
 **Red-team scenario on the same chain** (optional)
 
 ```bash
@@ -207,7 +236,8 @@ npm run coverage
 | `npm run demo:redteam:localhost` | Same scenario against `npx hardhat node` | works with a running node |
 | `npm run deploy:local` | Deploy, wire and seed the contracts on the local node; writes `deployments/localhost.json` | works with a running node |
 | `npm run api` / `npm run services:up` | Ledger API on http://localhost:4000: on-chain reads, and transactions for dashboard actions | works after `deploy:local` |
-| `npm run dev` | Dashboard (Vite) on http://localhost:5173, live from the API (demo data only if the API is down) | works |
+| `npm run dev` | Dashboard (Vite) on http://localhost:5173, live from the API (demo data only if the API is down); English, Hindi and Marathi, with voice navigation | works |
+| `npm --prefix dashboard test` | 101 dashboard tests: voice command parser (EN/HI/MR) and locale completeness | works, all passing; `npm --prefix dashboard run build` runs them first |
 | `npm run coverage` | Solidity coverage | works — 97.5% lines, 86.4% branches |
 | `npm run lint` | ESLint + Solhint | **broken** — ESLint is not installed/configured and there is no `.solhint.json`; Solhint with recommended rules reports 0 errors, 89 style warnings |
 | `npm run chain:up` | Prints how to start the nodes | use `npx hardhat node` instead |

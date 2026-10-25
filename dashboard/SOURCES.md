@@ -11,6 +11,13 @@ Only the four approved sources were considered: ThreeUI, Taste Skill, GSAP, 21st
 
 Other runtime dependencies are the existing project stack: React, React Router, Tailwind, and `ethers` (already used by the Hardhat project) for keccak256 in the Merkle proof checker.
 
+Added for languages and voice:
+
+- **Languages:** `i18next`, `react-i18next` and `i18next-browser-languagedetector` (MIT).
+- **Devanagari fonts:** Noto Sans Devanagari and Noto Serif Devanagari from Google Fonts (SIL Open Font License).
+- **Voice:** built on the browser's own Web Speech API (`SpeechRecognition`) and `speechSynthesis`, so no package is needed. The command parser, voice panel and summaries are project-specific code (`src/voice/`).
+- **Tests:** `vitest` (MIT), a dev dependency.
+
 ## Palette
 - Love Potion `#9E2A5A` — primary actions, critical states
 - Orange Pepper `#D9601F` — attention, focus ring, pending states
